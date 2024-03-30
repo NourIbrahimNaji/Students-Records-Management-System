@@ -1,0 +1,926 @@
+#!/bin/bash
+#---------------------ReadFile------------------------
+readFile(){
+while true 
+do
+# read from the user and check if the file exists or not 
+read -p "Enter here the File Name (filename) : " file
+if [ ! -e "$file" ]
+then
+    echo "The File [$file], does nor exist, would you like to enter another file name (1) / or to stop (0) "
+    read answer
+    if [ "$answer" -eq 1 ] 
+    then
+       continue
+    else
+     exit 1 
+    fi #end of the second if
+else
+   echo "The file [$file], exists! \n"
+   break
+   fi #end of the first if
+done   #end of the while loop 	
+}
+#-------------------readallRecord---------------------------
+#Show or print student records.
+
+readallRecord(){
+
+#read line by line  from file and store the line in varible "line"
+while read line
+do
+
+#split the line according to ";"
+
+#for example :
+#2021-2022/2; ENCS2245 69, ENCS3110 I, ENCS3143 FA, ENEE2345 69, ENCS3110 I, ENCS3124 FA
+#==> a= 2021-2022/2
+#==> g=ENCS2245 69, ENCS3110 I, ENCS3143 FA, ENEE2345 69, ENCS3110 I, ENCS3124 FA
+a=`cut -d';' -f1 <<< "$line"`
+g=`cut -d';' -f2 <<< "$line"`
+ 
+ 
+#change each "," to new line and store them in file2
+echo "$g" | tr ',' '\n' > file2
+
+# ==> g= ENCS2245 69
+	# ENCS3110 I
+	# ENCS3143 FA
+	# ENEE2345 69
+	# ENCS3110 I
+	# ENCS3124 FA
+
+
+filename=file2
+
+#read line by line  from file2 and store the line in varible "line2"
+while read line2 
+do
+
+#split the line according to " "
+
+Semmester=`cut -d ' ' -f 2 "$filename" > course`
+Courses=`cut -d ' ' -f 3 "$filename" > grade`
+
+#ENCS2245 69
+#==>Semmester = ENCS2245 >>> and store it in file course
+#==>Courses=69 >>> and store it in file grade
+
+done < $filename
+
+printf " The Semmester ==> "
+echo "$a" 
+printf " Courses                 Grade  \n"
+printf " ============================== \n"
+paste  course grade
+printf "\n"
+
+done < $file 
+
+}
+#-----------------------readspasificRecord-----------------------------
+readspasificRecord(){
+#ask user to enter the semester , and store it in varible "answer"
+  read -p "Please Enter The Semester You Want as (year-year/#ofSemmester) : " answer
+  
+  # seach about the contenet in varible "answer" in file and store all the line in varible "result"
+  result=`grep $answer $file`
+  
+  #if the rusult is there then print all coursres in same semester 
+   if [ "$result" ]
+   then
+  
+  Semmester=`cut -d';' -f1 <<< "$result"`
+  Courses=`cut -d';' -f2 <<< "$result"`
+  
+  echo "$Courses" | tr ',' '\n' > d
+  
+  filename=d
+  while read line2 
+  do
+  e1=`cut -d ' ' -f 2 "$filename" > course`
+  e2=`cut -d ' ' -f 3 "$filename" > grade`
+  done < $filename
+  
+  printf " The Semmester ==> "
+  echo "$Semmester" 
+  printf " Courses                 Grade  \n"
+  printf " ============================== \n"
+  paste  course grade
+  printf "\n"
+  
+  else   #if the result is not in file 
+  printf "The Year You Entered Does Not Exit \n"
+  echo "would you like to Enter another year (1) / or to stop (0) "
+     read answer2
+    if [ "$answer2" -eq 1 ] 
+    then
+       readspasificRecord;
+    else
+     exit 1 
+    fi
+  fi
+ 
+}
+#---------------------avg-------------------------------
+avg(){
+
+while read line
+do
+a=`cut -d';' -f1 <<< "$line"`
+g=`cut -d';' -f2 <<< "$line"`
+
+echo "$g" | tr ',' '\n' > file2
+
+filename=file2
+sum=0
+n=0
+
+while read line2 
+do
+n=$((n+1))
+Semmester=`cut -d ' ' -f 2 "$filename" > course`
+Courses=`cut -d ' ' -f 3 "$filename" > grade`
+done < $filename
+printf " The Semmester ==> "
+echo "$a" 
+printf " Courses                 Grade  \n"
+printf " ============================== \n"
+paste  course grade
+printf "\n"
+
+
+while read line3 
+do
+p=$line3
+    if [ $p = FA ]
+	then
+	p=50
+ fi
+   if [ $p = F ]
+	then
+	p=55
+ fi
+   if [ $p = I ]
+	then
+	p=0
+ fi
+ 
+ #calculate the sum of grade 
+sum=`expr $sum + $p`
+
+done < grade
+
+#calculate the avarege of grade 
+#we use function to print the grade in float form
+average=`calc $sum / $n` 
+printf "average = "$average
+printf "\n"
+
+
+done < $file
+}
+
+#----------------------allavg------------------------------
+allavg(){
+
+sum=0
+n=0
+while read line
+do
+
+g=`cut -d';' -f2 <<< "$line"`
+echo "$g" | tr ',' '\n' > file2
+
+filename=file2
+
+while read line2 
+do
+
+Courses=`cut -d ' ' -f 3 "$filename" > grade`
+
+cat $grade
+f=grade
+while read line3 
+do
+n=$((n+1))
+p=$line3
+    if [ $p = FA ]
+	then
+	p=50
+ fi
+   if [ $p = F ]
+	then
+	p=55
+ fi
+   if [ $p = I ]
+	then
+	p=0
+ fi
+ 
+ #calculate the sum of all grade in all semester
+sum=`expr $sum + $p`
+
+done < $f
+done < $filename
+
+
+printf "\n"
+done < $file
+
+
+#calculate the avarege of all grade in all semester
+average=`calc $sum / $n` 
+printf "average = "$average
+
+ 
+}
+#--------------------------passedHoure-------------------------
+passedHoure(){
+numberofpassedHoure=0
+n=0
+while read line
+do
+n=$((n+1))
+
+a=`cut -d';' -f1 <<< "$line"`
+g=`cut -d';' -f2 <<< "$line"`
+
+# for loop from line 1 until the end of line in file
+for i in "$n"
+do
+
+#change the "," to new line and store every line in file with special path
+echo "$g" | tr ',' '\n' > "file$(printf "$i")".1190270
+
+done 
+
+#collect all data from file that have the same path and store them in file "allcourses"
+cat *.1190270 > allcourse
+
+done < $file
+#delet the line that have grade"I"
+sed -i '/I/d' allcourse
+
+all=allcourse
+
+while read courseandgrade
+do
+
+#split each line from the file "all" according to space and store the second part of line in file with special path
+Course=`cut -d ' ' -f 2 "$all" > "Course$(printf "$i")".1190547`
+done < $all
+
+cat *.1190547 > all_course
+
+#sort according to ASCII code and delete the repeated part
+sort -u all_course > withoutrepeted
+
+allc=withoutrepeted
+
+echo "ALL Courses in all Semester ::   "
+echo "===============================  "
+while read line1
+do
+
+p=$line1
+echo "==> $line1"
+#store the grade of course in the varible "grade"
+grade=${p:9:2}
+
+#store the second number from the name course in varible "h"
+h=`echo ${p:5:1} > all_houre`
+
+allhoure=all_houre
+
+while read line2
+do
+
+houre=$line2
+echo "houre = $houre"
+#calculated tne number of passedHoure
+numberofpassedHoure=`expr $numberofpassedHoure + $houre`
+
+
+done < $allhoure
+done < $allc
+
+echo "number of passed Houre ==> $numberofpassedHoure"
+
+
+}
+#-------------------------all_hours_taken_for_every_semester-----------------------
+all_hours_taken_for_every_semester(){
+
+while read line
+do
+a=`cut -d';' -f1 <<< "$line"`
+g=`cut -d';' -f2 <<< "$line"`
+
+echo "$g" | tr ',' '\n' > file2
+
+filename=file2
+
+while read line2 
+do
+
+Semmester=`cut -d ' ' -f 2 "$filename" > course`
+
+done < $filename
+c=course
+sumofhoure=0
+while read line3 
+do
+p=$line3
+
+houre=${p:5:1}
+sumofhoure=`expr $sumofhoure + $houre`
+
+done < $c
+
+printf " The Semmester ==> "
+echo "$a" 
+echo "sum of houre = $sumofhoure"
+done < $file
+}
+#------------------------percentage------------------------
+percentage(){
+
+numberofcourse=0
+n=0
+while read line
+do
+n=$((n+1))
+
+a=`cut -d';' -f1 <<< "$line"`
+g=`cut -d';' -f2 <<< "$line"`
+
+for i in "$n"
+do
+echo "$g" | tr ',' '\n' > "file$(printf "$i")".115
+
+done 
+
+cat *.115 > allcourse
+
+done < $file
+
+sed -i '/I/d' allcourse
+all=allcourse
+while read line
+do
+j=$line
+rar1=`echo ${j:9:2}`
+t=`echo ${j:5:1} > houres`
+file2name=houres
+
+if [ "$rar1" = FA -o  "$rar1" = F ]
+then
+while read line4
+do
+t=$line4
+numberOFfail=$((numberOFfail +$t))
+
+done < $file2name
+fi
+done<$all
+
+while read courseandgrade
+do
+Course=`cut -d ' ' -f 2 "$all" > "Course$(printf "$i")".988`
+done < $all
+
+cat *.988 > all_course
+sort -u all_course > withoutrepeted
+allc=withoutrepeted
+
+while read line1
+do
+p=$line1
+grade=${p:9:2}
+houre=${p:5:1}
+sum=`expr $sum + $houre`
+done < $allc
+echo "sum ==> $sum"
+echo "number of courcefail = $numberOFfail"
+
+e=`calc $numberOFfail / $sum` 
+
+divi=`calc $e / 0.01` 
+
+echo "divi= $divi %"	
+	
+}
+
+calc() { awk "BEGIN{print $*}"; }
+#--------------------numberofcourses----------------------------
+numberofcourses(){
+numberofcourse=0
+n=0
+while read line
+do
+n=$((n+1))
+
+a=`cut -d';' -f1 <<< "$line"`
+g=`cut -d';' -f2 <<< "$line"`
+
+for i in "$n"
+do
+echo "$g" | tr ',' '\n' > "file$(printf "$i")".1190270
+
+done 
+
+cat *.1190270 > allcourse
+
+done < $file
+
+sed -i '/I/d' allcourse
+
+all=allcourse
+
+while read courseandgrade
+do
+Course=`cut -d ' ' -f 2 "$all" > "Course$(printf "$i")".Course`
+done < $all
+
+cat *.Course > all_course
+
+
+sort -u all_course > withoutrepeted
+
+allc=withoutrepeted
+while read line1
+do
+
+p=$line1
+grade=${p:9:2}
+houre=${p:5:1}
+
+if [ "$houre" -ge 2 ]
+then
+
+numberofcourse=$((numberofcourse+1))
+fi
+
+done < $allc
+
+echo "number of course ==> $numberofcourse"
+}
+#------------------numberofLab---------------------
+numberofLab(){
+
+numberofLab=0
+n=0
+while read line
+do
+n=$((n+1))
+
+a=`cut -d';' -f1 <<< "$line"`
+g=`cut -d';' -f2 <<< "$line"`
+
+for i in "$n"
+do
+echo "$g" | tr ',' '\n' > "file$(printf "$i")".1190270
+
+done 
+
+cat *.1190270 > allcourse
+
+done < $file
+
+sed -i '/I/d' allcourse
+
+all=allcourse
+
+while read courseandgrade
+do
+Course=`cut -d ' ' -f 2 "$all" > "Course$(printf "$i")".Lab`
+done < $all
+
+cat *.Lab > all_course
+
+
+sort -u all_course > withoutrepeted
+
+allc=withoutrepeted
+while read line1
+do
+
+p=$line1
+grade=${p:9:2}
+houre=${p:5:1}
+
+if [ "$houre" -eq 1 ]
+then
+numberofLab=$((numberofLab+1))
+fi
+done < $allc
+echo "number of Lab ==> $numberofLab"
+}
+#--------------------Change_in_course_grade-----------------------
+Change_in_course_grade(){
+  read -p "Please Enter The Semester You Want as (year-year/#ofSemmester) : " answer
+  
+  result=`grep $answer $file`
+  
+   if [ "$result" ]
+   then
+  
+  Semmester=`cut -d';' -f1 <<< "$result"`
+  Courses=`cut -d';' -f2 <<< "$result"`
+ 
+  echo "$Courses" | tr ',' '\n' > d
+  
+  cat -n d
+  filename=d
+  while read line2 
+  do
+  all_course=`cut -d ' ' -f 2 "$filename" > course`
+  all_grade=`cut -d ' ' -f 3 "$filename" > grade`
+  done < $filename
+
+  
+   r;
+   
+  else
+  printf "The Year You Entered Does Not Exit \n"
+  echo "would you like to Enter another year (1) / or to stop (0) "
+     read num
+    if [ "$num" -eq 1 ] 
+    then
+       Change_in_course_grade;
+    else
+     exit 1 
+    fi
+  fi
+
+}
+r(){
+  read -p "Please Enter The grade You Want to change it : " oldGrade
+   read -p "Please Enter The number of line that the grade store in: " line
+   
+  result=`grep $oldGrade grade`
+  if [ "$result" ]
+  then
+  read -p "Please Enter The new grade : " newGrade
+ 
+
+  new=$(echo $newGrade | grep "^-\?[0-9]*$" | wc -c)
+
+
+  if [ $newGrade = F -o $newGrade = FA -o $newGrade = I -o $new -gt 1 ]
+   then
+      if [ $newGrade -ge 60 -a $newGrade -le 99 -o $newGrade = F -o $newGrade = FA -o $newGrade = I ] 
+      then  
+      sed -i "$line s/$oldGrade/$newGrade/g" grade 
+        
+     else 
+     printf "Please Enter int between 0-100 \n"
+     echo "would you like to Enter another Grade (1) / or to stop (0) "
+     read num
+     if [ "$num" -eq 1 ] 
+     then
+       r;
+     else
+     exit 1  
+    fi
+  fi
+    
+    else 
+    printf "Please Enter int OR F , FA , I \n"
+    echo "would you like to Enter another Grade (1) / or to stop (0) "
+    read num
+    if [ "$num" -eq 1 ] 
+    then
+       r;
+    else
+     exit 1 
+    fi  
+ fi
+  paste course grade > newfile
+  sed -i "s/\t/ /" newfile
+  sed -i -e "s/^/ /" newfile
+  e=`echo $(readarray -t ARRAY < newfile ; IFS=',' ; echo "${ARRAY[*]}") > a`
+  echo $answer > b
+  paste b  a > final
+  sed -i "s/\t/  /" final
+  sed -i -e "s/ /;/" final 
+ 
+
+ 
+ printf "THE FILE BEFOR CHANGE : \n"
+ printf "============================== : \n"
+ cat d
+ printf "\n"
+  printf "THE FILE AFTER CHANGE : \n"
+  printf "============================== : \n"
+ cat newfile
+ printf "\n"
+   printf "Do you want to save this change ? \n"
+   echo "if yes enter  (1) / if no enter  (0) "
+     read num
+    if [ "$num" -eq 1 ] 
+    then
+      f=final
+  while read line
+  do
+  q=$line
+ done < $f
+
+
+ echo $q >> $file
+       delet=`grep $answer $file`
+       sed -i "/$Courses/d" $file 
+       printf "\n"
+       printf "update Sucessfully \n"
+       printf "\n"
+       cat -n $file
+    else
+     exit 1 
+    fi
+
+  else
+  printf "The grade You Entered Does Not Exit \n"
+  echo "would you like to Enter another year (1) / or to stop (0) "
+     read num
+    if [ "$num" -eq 1 ] 
+    then
+       r;
+    else
+     exit 1 
+    fi
+fi    
+}
+#--------------------------------insertnew-------------------------------
+insertnew(){
+echo -n "" > course_FILE
+echo -n "" > grade_FILE
+sumofhoure=0
+
+read -p "Enter records for new semester as 'year-year/semester'  =>  " semester
+
+result=`grep $semester $file`
+
+if [ "$result" ]
+   then
+     printf "The semester You Entered exist \n"
+    echo "would you like to Enter another year (1) / or to stop (0) "
+     read num
+    if [ "$num" -eq 1 ] 
+    then
+       insertnew;
+    else
+     exit 1 
+    fi
+   
+   
+else 
+yrar1=`echo ${semester:0:4}`
+char1=`echo ${semester:4:1}`
+yrar2=`echo ${semester:5:4}`
+char2=`echo ${semester:9:1}`
+sem=`echo ${semester:10:1}`
+
+
+
+L=$(echo $yrar1 | grep "^-\?[0-9]*$" | wc -c)
+P=$(echo $yrar2 | grep "^-\?[0-9]*$" | wc -c)
+
+
+if [ "$L" -gt 1 ] 
+then
+if [ "$char1" = '-' ]
+then
+if [ "$P" -gt 1 ]
+then
+if [ "$char2" = '/' ]
+then
+if [ "$sem" -eq 1 -o  "$sem" -eq 2 -o "$sem" -eq 3 ]
+then
+
+
+t;
+
+else 
+ Repete;
+fi
+else 
+ Repete;
+fi
+else 
+ Repete;
+fi
+else 
+ Repete;
+fi
+else 
+ Repete;
+fi
+
+ fi 
+}
+
+#-*-*-*-*-*-*-*-*-*-*-*-***********************
+t(){
+echo  "==>>>>> NOTE ::: if you want to stop entering course enter  <<<< -1 >>>> "
+echo  "=========================================================================== "
+printf "\n"
+
+
+while true
+do
+read -p "Enter the course you want  " course
+
+
+   
+# else  
+  if [ "$course" = -1 ]
+then
+
+#----------
+a=course_FILE
+
+while read lineofcourse
+do
+
+s=$lineofcourse
+
+
+houre=${s:5:1}
+sumofhoure=`expr $sumofhoure + $houre`
+
+done < $a
+
+#----------
+if [ $sumofhoure -lt 12 ]
+then
+printf "Error ,, Less than 12 houre ? \n"
+ echo "would you like to Ensert another Record (1) / or to stop (0) "
+   read num
+   if [ "$num" -eq 1 ] 
+    then
+       insertnew;
+    else
+     exit 1 
+    fi
+    #************************** #
+    else
+    printf "Do you want to save this Record ? \n"
+      echo "if yes enter  (1) / if no enter  (0) "
+     read num2
+     f=final
+    if [ "$num2" -eq 1 ] 
+    then
+      while read line1
+      do
+      q=$line1
+     done < $f
+     
+     echo $q >> $file
+       printf "\n"
+       printf "saved Sucessfully \n"
+       printf "\n"
+       cat -n $file
+      else
+       exit 1  
+  fi
+    
+    fi 
+   #**************************
+    break 
+        
+fi
+
+#fi #***
+enter;
+
+
+done
+}
+#-*-*-*-*-*-*-*-*-*-*-*-***********************
+enter(){
+
+char_course=`echo ${course:0:4}`
+number_course=`echo ${course:4:4}`
+
+b=$(echo $number_course | grep "^-\?[0-9]*$" | wc -c)
+if [ $char_course = 'ENCS' -o  $char_course = 'ENEE' ]
+then
+if [ $b -gt 1  ]
+then
+if [ $number_course -ge 2000 -a $number_course -le 5999  ]
+then 
+ read -p "Enter the grade of course   " grade_course
+ 
+first_digit=`echo ${grade_course:0:1}`
+Second_digit=`echo ${grade_course:1:1}`
+
+ grade=$(echo $Second_digit | grep "^-\?[0-9]*$" | wc -c)
+ grade1=$(echo $first_digit | grep "^-\?[6-9]*$" | wc -c)
+ 
+ 
+  if [ \( "$grade_course" = F -o "$grade_course" = FA \) -o \( \( "$grade1" -gt 0 -a "$grade" -gt 0 \) -o "$grade_course" = I \) ]   
+   then  
+      echo $course >> course_FILE
+      echo $grade_course >> grade_FILE
+      paste course_FILE grade_FILE > new_file
+      sed -i "s/\t/  /" new_file
+      sed -i -e "s/^/ /" new_file
+      e=`echo $(readarray -t ARRAY < new_file ; IFS=',' ; echo "${ARRAY[*]}") > new_semester`
+     
+      echo $semester > b
+      paste b  new_semester > final
+      sed -i "s/\t/  /" final
+      sed -i -e "s/ /;/" final 
+      
+
+ else 
+printf "The grade shoud be F or FA or I or int number \n"
+t;
+fi
+
+else
+printf "The value you entered is not in correct (int number between 2000 and 5999 after ENCE OR ENEE )  \n"
+t;
+    fi
+
+else
+printf "The value you entered is not in correct (int number after ENCS OR ENEE )  \n"
+t;
+    fi
+
+else
+printf "The value you entered is not in correct (ENCE OR ENEE) ONLY .. \n"
+ t;
+fi 
+}
+#-*-*-*-*-*-*-*-*-*-*-*-***********************
+Repete(){
+printf "The value you entered is not in correct format as ==> year-year/semester \n"
+ echo "would you like to Enter another year (1) / or to stop (0) "
+   read num
+   if [ "$num" -eq 1 ] 
+    then
+       insertnew;
+    else
+     exit 1 
+    fi
+}
+#-*-*-*-*-*-*-*-*-*-*-*-***********************
+r2(){
+ echo "would you like to Enter another value (1) / or to stop (0) "
+   read num
+   if [ "$num" -eq 1 ] 
+    then
+      enter;
+    else
+     exit 1 
+    fi 
+}
+
+#---------------------MAIN_MENU-----------------------------
+readFile
+
+while true 
+      do
+        printf "\n"
+        echo "----------------------------------------------------------------------"
+	echo "                           Welcom "
+	echo "                           MAIN MENU"
+	echo "----------------------------------------------------------------------"
+	echo "	[1] Show or print student records."
+	echo "	[2] Show or print student records for a specific semester."
+	echo "	[3] show or print the overall avg."
+	echo "	[4] show or print the overall avg for every semester."
+	echo "	[5] show or print the total number of passed hours ."
+	echo "	[6] show or print the percentage of total passed hours in relation to total F and FA hours"
+	echo "	[7] show or print the number of hours taken for every semester."
+	echo "	[8] show or print the number of courses taken."
+	echo "	[9] show or print the number of Labs taken."
+	echo "	[10] insert new semester record."
+	echo "	[11] Change in course grade."
+	echo "	[0] Exit"
+        echo "======================="
+
+	read -p "   Enter The choice : " choice
+	
+	case "$choice"
+	in
+	
+	0) exit 1;;
+	1) readallRecord;;
+	2) readspasificRecord;;
+	3) allavg;;
+	4) avg;;
+	5) passedHoure;;
+	6) percentage;;
+	7) all_hours_taken_for_every_semester;;
+	8) numberofcourses;;
+	9) numberofLab;;
+	10) insertnew;;
+	11) Change_in_course_grade;;
+        *) echo "    ==> please enter valid number from MENU"
+
+	esac
+done
+
